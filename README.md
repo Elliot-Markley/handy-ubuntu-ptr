@@ -31,7 +31,7 @@ No clipboard emulation is required.
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/handy-ubuntu-wayland.git
+git clone https://github.com/Elliot-Markley/handy-ubuntu-ptr.git
 cd handy-ubuntu-wayland
 ```
 
