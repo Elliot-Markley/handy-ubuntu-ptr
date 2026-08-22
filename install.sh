@@ -458,7 +458,7 @@ success "Configuration saved:"
 echo "      $CONFIG_FILE"
 
 
-```bash
+
 # ------------------------------------------------------------
 # Install Push-to-Talk listener
 # ------------------------------------------------------------
@@ -615,7 +615,7 @@ sudo chown \
 
 success "Installed:"
 echo "      $PTT_DEST"
-```
+
 
 
 
