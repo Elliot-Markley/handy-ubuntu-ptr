@@ -458,11 +458,34 @@ success "Configuration saved:"
 echo "      $CONFIG_FILE"
 
 
+```bash
 # ------------------------------------------------------------
 # Install Push-to-Talk listener
 # ------------------------------------------------------------
 
 info "Installing Push-to-Talk listener..."
+
+# If a previous install created the file as root or another user,
+# repair ownership before attempting to overwrite it.
+if [[ -e "$PTT_DEST" ]]; then
+
+    CURRENT_OWNER="$(stat -c '%U' "$PTT_DEST")"
+    CURRENT_GROUP="$(stat -c '%G' "$PTT_DEST")"
+
+    if [[ "$CURRENT_OWNER" != "$TARGET_USER" ]]; then
+
+        warn "Existing handy-ptt is owned by $CURRENT_OWNER:$CURRENT_GROUP."
+        info "Repairing ownership..."
+
+        sudo chown \
+            "$TARGET_USER":"$(id -gn "$TARGET_USER")" \
+            "$PTT_DEST"
+
+        success "Ownership repaired."
+
+    fi
+
+fi
 
 cat > "$PTT_DEST" <<'PYTHON'
 #!/usr/bin/env python3
@@ -479,10 +502,6 @@ CONFIG_FILE = os.path.expanduser(
     "~/.config/handy-ptt/config.json"
 )
 
-
-# ------------------------------------------------------------
-# Load configuration
-# ------------------------------------------------------------
 
 with open(CONFIG_FILE, "r") as f:
     config = json.load(f)
@@ -503,10 +522,6 @@ press_times = {}
 recording = False
 
 
-# ------------------------------------------------------------
-# Handy control
-# ------------------------------------------------------------
-
 def toggle_handy():
 
     subprocess.Popen(
@@ -519,10 +534,6 @@ def toggle_handy():
         start_new_session=True,
     )
 
-
-# ------------------------------------------------------------
-# Shortcut state
-# ------------------------------------------------------------
 
 def combo_down():
 
@@ -549,10 +560,6 @@ def combo_within_window():
     )
 
 
-# ------------------------------------------------------------
-# Event loop
-# ------------------------------------------------------------
-
 for event in device.read_loop():
 
     if event.type != ecodes.EV_KEY:
@@ -562,11 +569,7 @@ for event in device.read_loop():
     if event.value == 2:
         continue
 
-
-    # --------------------------------------------------------
     # Key press
-    # --------------------------------------------------------
-
     if event.value == 1:
 
         pressed.add(event.code)
@@ -579,28 +582,21 @@ for event in device.read_loop():
             and combo_down()
             and combo_within_window()
         ):
-
             toggle_handy()
             recording = True
 
-
-    # --------------------------------------------------------
     # Key release
-    # --------------------------------------------------------
-
     elif event.value == 0:
 
         pressed.discard(event.code)
 
-        # Once recording has started, wait until every key in
-        # the Push-to-Talk combination has been released.
         if (
             recording
             and not (TARGET_KEYS & pressed)
         ):
 
-            # Give GNOME a moment to process modifier releases
-            # before Handy finishes and ydotool begins typing.
+            # Let GNOME process all modifier releases before
+            # Handy finishes and ydotool starts typing.
             time.sleep(0.05)
 
             toggle_handy()
@@ -609,10 +605,18 @@ for event in device.read_loop():
             press_times.clear()
 PYTHON
 
-chmod +x "$PTT_DEST"
+chmod 0755 "$PTT_DEST"
+
+# Ensure the finished file belongs to the intended user even if
+# something unusual happened during a previous installation.
+sudo chown \
+    "$TARGET_USER":"$(id -gn "$TARGET_USER")" \
+    "$PTT_DEST"
 
 success "Installed:"
 echo "      $PTT_DEST"
+```
+
 
 
 # ------------------------------------------------------------
