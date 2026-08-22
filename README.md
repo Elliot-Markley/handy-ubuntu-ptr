@@ -1,376 +1,161 @@
 # Handy on Ubuntu GNOME Wayland
 
-Automated setup for using [Handy](https://github.com/cjpais/Handy) dictation with GNOME Wayland on Ubuntu.
+Quick setup for getting **Handy dictation working on Ubuntu GNOME Wayland** using `ydotool`.
 
-This configuration uses `ydotool` and Linux's `/dev/uinput` interface to type Handy transcriptions directly into the currently focused application.
+The installer configures `/dev/uinput`, installs `ydotool`, adds your user to the required `input` group, and installs the external typing script.
 
-## Why This Is Needed
+## 1. Clone and Run the Installer
 
-GNOME Wayland restricts applications from programmatically injecting keyboard input using many of the methods that work under X11.
-
-`ydotool` works around this by emulating keyboard input through Linux's `/dev/uinput` device.
-
-The resulting path is:
-
-```text
-Handy
-  ↓
-External Script
-  ↓
-ydotool
-  ↓
-/dev/uinput
-  ↓
-Focused Application
-```
-
-No clipboard emulation is required.
-
-## Installation
-
-Clone the repository:
+Open Terminal:
 
 ```bash
 git clone https://github.com/Elliot-Markley/handy-ubuntu-ptr.git
 cd handy-ubuntu-ptr
-```
-
-Make the installer executable:
-
-```bash
 chmod +x install.sh
-```
-
-Run it as your **normal user**:
-
-```bash
 ./install.sh
 ```
 
-Do **not** run:
+Run the installer as your **normal user**, not with `sudo`.
+
+Enter your password when the installer requests sudo access.
+
+## 2. Reboot
+
+After installation:
 
 ```bash
-sudo ./install.sh
+sudo reboot
 ```
 
-The installer will request sudo access when it needs to make system-level changes.
+A reboot is required for the new `input` group membership to take effect reliably.
 
-## What the Installer Does
-
-The installer:
-
-* Installs `ydotool`
-* Loads the `uinput` kernel module
-* Configures `uinput` to load automatically during boot
-* Creates the required udev rule
-* Gives the `input` group read/write access to `/dev/uinput`
-* Adds your user account to the `input` group
-* Installs the Handy helper script to:
-
-```text
-~/.local/bin/handy-paste-wl-copy
-```
-
-* Performs basic diagnostics
-* Detects whether Handy is installed
-* Prints the remaining Handy configuration steps
-
-## Log Out After Installation
-
-If the installer adds your account to the `input` group, you must **log completely out of Ubuntu and log back in**.
-
-Opening another terminal is not sufficient.
-
-After logging back in, verify:
+After logging back in, you can verify everything is ready with:
 
 ```bash
 groups
-```
-
-`input` should appear in the list.
-
-Then verify access to `/dev/uinput`:
-
-```bash
 test -w /dev/uinput && echo "uinput OK" || echo "uinput DENIED"
 ```
 
-Expected result:
+`input` should appear in your groups and the second command should return:
 
 ```text
 uinput OK
 ```
 
-## Test ydotool
+## 3. Configure Handy
 
-Before configuring Handy, test keyboard injection directly.
-
-Open GNOME Text Editor.
-
-Then run:
-
-```bash
-sleep 5; /usr/bin/ydotool type --key-delay 0 "manual-test"
-```
-
-Switch back to Text Editor before the five seconds expire.
-
-You should see:
-
-```text
-manual-test
-```
-
-typed into the editor.
-
-You may see:
-
-```text
-ydotool: notice: ydotoold backend unavailable (may have latency+delay issues)
-```
-
-This is expected with the Ubuntu `ydotool` configuration used here.
-
-`ydotoold` is not required for this setup.
-
-## Test the Handy Helper
-
-Next test the external script directly:
-
-```bash
-sleep 5; ~/.local/bin/handy-paste-wl-copy "script-test"
-```
-
-Switch to Text Editor.
-
-You should see:
-
-```text
-script-test
-```
-
-If both tests work, the Linux side of the setup is working.
-
-## Configure Handy
-
-Open Handy's advanced settings.
+Open **Handy → Settings → Advanced**.
 
 Set:
 
+**Paste Method**
+
 ```text
-Paste Method:
 External Script
 ```
 
-Set the external script path to the complete path printed by the installer.
+**External Script Path**
+
+Use your own home directory:
+
+```text
+/home/YOUR_USERNAME/.local/bin/handy-paste-wl-copy
+```
+
+For example, if your username is `ptr`:
+
+```text
+/home/ptr/.local/bin/handy-paste-wl-copy
+```
+
+Do **not** copy another machine's username into this path.
+
+You can find the correct path with:
+
+```bash
+echo "$HOME/.local/bin/handy-paste-wl-copy"
+```
+
+**Clipboard Handling**
+
+```text
+Don't Modify
+```
+
+## 4. Disable Handy's Overlay
+
+In Handy's settings, disable the recording/transcription **overlay**.
+
+This is important on GNOME Wayland. The overlay can steal focus from the application you're typing into, causing the transcription to disappear instead of being typed into the focused window.
+
+## 5. Create an Ubuntu Keyboard Shortcut
+
+Handy's built-in global keybind may not work correctly under GNOME Wayland, so use a GNOME custom keyboard shortcut instead.
+
+First verify Handy's command works:
+
+```bash
+/usr/bin/handy --toggle-transcription
+```
+
+Running it once should start recording. Running it again should stop recording and transcribe.
+
+Then open:
+
+**Ubuntu Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts**
+
+Create a new shortcut:
+
+**Name**
+
+```text
+Handy Transcription
+```
+
+**Command**
+
+```text
+/usr/bin/handy --toggle-transcription
+```
+
+Assign whatever keyboard shortcut you want to use for dictation.
 
 For example:
 
 ```text
-/home/USERNAME/.local/bin/handy-paste-wl-copy
+Ctrl + Space
 ```
 
-Do not use:
+## 6. Test It
+
+Open Text Editor or any application containing a text field and place the cursor where you want the transcription.
+
+Press your new Handy keyboard shortcut.
+
+Speak normally.
+
+Press the shortcut again.
+
+After Handy finishes transcribing, the text should automatically be typed into the focused application.
+
+## Finished
+
+The working chain should now be:
 
 ```text
-~/.local/bin/handy-paste-wl-copy
-```
-
-Use the complete absolute path.
-
-If available, set:
-
-```text
-Clipboard Handling:
-Don't Modify
-```
-
-## IMPORTANT: Disable Handy's Overlay
-
-Disable Handy's recording/transcription overlay.
-
-This is essential for this setup under GNOME Wayland.
-
-The overlay can become the focused Wayland surface while Handy is recording or transcribing. `ydotool` then sends its simulated keyboard input to the wrong surface instead of the application you were originally using.
-
-This can result in the confusing situation where:
-
-```text
-Handy records successfully
+Ubuntu Custom Shortcut
         ↓
-Handy transcribes successfully
-        ↓
-External script runs successfully
-        ↓
-ydotool exits successfully
-        ↓
-Nothing appears
-```
-
-If everything works manually but Handy doesn't type the transcription, **check the overlay first**.
-
-## Troubleshooting
-
-### Check `/dev/uinput`
-
-Run:
-
-```bash
-ls -l /dev/uinput
-```
-
-Expected permissions should look approximately like:
-
-```text
-crw-rw---- 1 root input ... /dev/uinput
-```
-
-The important values are:
-
-```text
-Owner: root
-Group: input
-Mode:  0660
-```
-
-### Check Your Groups
-
-Run:
-
-```bash
-groups
-```
-
-You should see:
-
-```text
-input
-```
-
-### Check Write Access
-
-Run:
-
-```bash
-test -w /dev/uinput && echo "uinput OK" || echo "uinput DENIED"
-```
-
-### `failed to open uinput device`
-
-If you receive:
-
-```text
-failed to open uinput device
-Aborted (core dumped)
-```
-
-check:
-
-```bash
-ls -l /dev/uinput
-groups
-```
-
-If you were recently added to the `input` group, log completely out and back in.
-
-### `ydotoold backend unavailable`
-
-The warning:
-
-```text
-ydotoold backend unavailable
-```
-
-does not by itself indicate a problem.
-
-If:
-
-```bash
-ydotool type --key-delay 0 "test"
-```
-
-successfully types text, the warning can be ignored.
-
-### Check Handy's Log
-
-Watch the Handy log:
-
-```bash
-tail -f ~/.local/share/com.pais.handy/logs/handy.log
-```
-
-Perform a transcription.
-
-You should see something similar to:
-
-```text
-Using paste method: ExternalScript
-Pasting via external script: /home/YOUR-USER/.local/bin/handy-paste-wl-copy
-Text pasted successfully
-```
-
-### Manual ydotool Works but Handy Doesn't
-
-If this works:
-
-```bash
-sleep 5; ydotool type --key-delay 0 "manual-test"
-```
-
-and this works:
-
-```bash
-sleep 5; ~/.local/bin/handy-paste-wl-copy "script-test"
-```
-
-but Handy still doesn't type transcriptions:
-
-**Disable Handy's overlay.**
-
-That is likely a window-focus issue rather than a `ydotool` or `/dev/uinput` issue.
-
-## Updating
-
-Pull the newest version:
-
-```bash
-cd handy-ubuntu-wayland
-git pull
-```
-
-Then rerun:
-
-```bash
-./install.sh
-```
-
-The installer is designed to be safe to run again.
-
-## Files Installed
-
-System configuration:
-
-```text
-/etc/modules-load.d/uinput.conf
-/etc/udev/rules.d/60-uinput.rules
-```
-
-User script:
-
-```text
-~/.local/bin/handy-paste-wl-copy
-```
-
-## Tested Configuration
-
-This setup is intended for:
-
-```text
-Ubuntu
-GNOME
-Wayland
 Handy
-ydotool 0.1.8
+        ↓
+Speech Transcription
+        ↓
+External Script
+        ↓
+ydotool
+        ↓
+/dev/uinput
+        ↓
+Focused Application
 ```
 
-Newer versions of `ydotool` may behave differently, particularly regarding the optional `ydotoold` daemon.
+You should now be able to use the custom shortcut to dictate into browsers, text editors, terminals, chat applications, and most other applications under GNOME Wayland.
