@@ -647,7 +647,7 @@ EOF
 
 systemctl --user daemon-reload
 
-systemctl --user enable handy-ptt.service
+systemctl --user enable --now handy-ptt.service
 
 success "handy-ptt.service enabled."
 
