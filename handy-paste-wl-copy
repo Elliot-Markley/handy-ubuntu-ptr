@@ -1,0 +1,25 @@
+```bash
+#!/usr/bin/env bash
+
+# Handy External Script for GNOME Wayland
+#
+# Receives Handy's completed transcription as argument $1 and
+# types it into the currently focused application using ydotool.
+
+set -u
+
+TEXT="${1:-}"
+
+# Nothing to type.
+[[ -z "$TEXT" ]] && exit 0
+
+env -i \
+    HOME="${HOME}" \
+    USER="${USER:-$(id -un)}" \
+    LOGNAME="${LOGNAME:-${USER:-$(id -un)}}" \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    LANG="${LANG:-en_US.UTF-8}" \
+    /usr/bin/ydotool type --key-delay 0 "$TEXT" >/dev/null 2>&1
+
+exit $?
+```
