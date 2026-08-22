@@ -32,7 +32,7 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/Elliot-Markley/handy-ubuntu-ptr.git
-cd handy-ubuntu-wayland
+cd handy-ubuntu-ptr
 ```
 
 Make the installer executable:
