@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -euo pipefail
@@ -222,4 +221,3 @@ echo
 echo "  groups"
 echo '  test -w /dev/uinput && echo "uinput OK" || echo "uinput DENIED"'
 echo
-```
