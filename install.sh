@@ -560,6 +560,7 @@ def combo_within_window():
     )
 
 
+
 for event in device.read_loop():
 
     if event.type != ecodes.EV_KEY:
@@ -603,6 +604,8 @@ for event in device.read_loop():
 
             recording = False
             press_times.clear()
+
+
 PYTHON
 
 chmod 0755 "$PTT_DEST"
