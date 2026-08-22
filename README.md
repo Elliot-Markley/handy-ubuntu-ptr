@@ -167,7 +167,7 @@ Set the external script path to the complete path printed by the installer.
 For example:
 
 ```text
-/home/elliot/.local/bin/handy-paste-wl-copy
+/home/USERNAME/.local/bin/handy-paste-wl-copy
 ```
 
 Do not use:
