@@ -9,6 +9,7 @@ The installer configures `/dev/uinput`, installs `ydotool`, adds your user to th
 Open Terminal:
 
 ```bash
+sudo apt install git -y
 git clone https://github.com/Elliot-Markley/handy-ubuntu-ptr.git
 cd handy-ubuntu-ptr
 chmod +x install.sh
