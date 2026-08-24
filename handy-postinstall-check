@@ -2,6 +2,9 @@
 
 set -u
 
+REPORT="$(mktemp)"
+exec >"$REPORT" 2>&1
+
 CONFIG="$HOME/.config/handy-ptt/config.json"
 PASTE_SCRIPT="$HOME/.local/bin/handy-paste-wl-copy"
 PTT_SCRIPT="$HOME/.local/bin/handy-ptt"
@@ -231,8 +234,15 @@ echo "  systemctl --user status handy-ptt"
 echo "  journalctl --user -u handy-ptt -b --no-pager"
 echo "  tail -f ~/.local/share/com.pais.handy/logs/handy.log"
 echo
+echo "Press q to exit"
 
-read -rp "Press Enter to close this window..."
+# Restore output to the terminal.
+exec >/dev/tty 2>&1
+
+# Display the completed report from the top.
+less "$REPORT"
+
+rm -f "$REPORT"
 
 
 # ------------------------------------------------------------
