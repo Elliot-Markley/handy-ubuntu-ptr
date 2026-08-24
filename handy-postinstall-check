@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+
+set -u
+
+CONFIG="$HOME/.config/handy-ptt/config.json"
+PASTE_SCRIPT="$HOME/.local/bin/handy-paste-wl-copy"
+PTT_SCRIPT="$HOME/.local/bin/handy-ptt"
+PTT_SERVICE="handy-ptt.service"
+
+clear
+
+echo "============================================================"
+echo "            Handy Post-Reboot Verification"
+echo "============================================================"
+echo
+
+# ------------------------------------------------------------
+# Keybind
+# ------------------------------------------------------------
+
+if [[ -f "$CONFIG" ]]; then
+
+    KEYBIND="$(
+        python3 -c '
+import json, sys
+
+with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+print(" + ".join(config.get("key_names", [])))
+' "$CONFIG" 2>/dev/null
+    )"
+
+    DEVICE="$(
+        python3 -c '
+import json, sys
+
+with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+print(config.get("device", ""))
+' "$CONFIG" 2>/dev/null
+    )"
+
+    echo "[ OK ] Push-to-Talk configuration found."
+    echo
+    echo "Configured shortcut:"
+    echo "  ${KEYBIND:-Unknown}"
+    echo
+
+else
+
+    echo "[FAIL] Push-to-Talk configuration not found:"
+    echo "       $CONFIG"
+    echo
+
+    KEYBIND="Unknown"
+    DEVICE=""
+
+fi
+
+
+# ------------------------------------------------------------
+# input group
+# ------------------------------------------------------------
+
+if groups | tr ' ' '\n' | grep -qx input; then
+    echo "[ OK ] input group is active for this login session."
+else
+    echo "[FAIL] input group is NOT active."
+    echo "       Reboot or log out completely and log back in."
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# /dev/uinput
+# ------------------------------------------------------------
+
+if [[ -e /dev/uinput ]]; then
+
+    if [[ -w /dev/uinput ]]; then
+        echo "[ OK ] /dev/uinput exists and is writable."
+    else
+        echo "[FAIL] /dev/uinput exists but is not writable."
+        ls -l /dev/uinput
+    fi
+
+else
+
+    echo "[FAIL] /dev/uinput does not exist."
+
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# Keyboard device
+# ------------------------------------------------------------
+
+if [[ -n "$DEVICE" ]]; then
+
+    if [[ -e "$DEVICE" ]]; then
+
+        if [[ -r "$DEVICE" ]]; then
+            echo "[ OK ] Configured keyboard device exists and is readable."
+        else
+            echo "[FAIL] Configured keyboard device exists but is not readable."
+        fi
+
+        echo "       $DEVICE"
+
+    else
+
+        echo "[FAIL] Configured keyboard device does not exist:"
+        echo "       $DEVICE"
+
+    fi
+
+else
+
+    echo "[WARN] Could not determine configured keyboard device."
+
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# Scripts
+# ------------------------------------------------------------
+
+if [[ -x "$PASTE_SCRIPT" ]]; then
+    echo "[ OK ] Handy paste script is installed and executable."
+else
+    echo "[FAIL] Handy paste script is missing or not executable:"
+    echo "       $PASTE_SCRIPT"
+fi
+
+if [[ -x "$PTT_SCRIPT" ]]; then
+    echo "[ OK ] Push-to-Talk listener is installed and executable."
+else
+    echo "[FAIL] Push-to-Talk listener is missing or not executable:"
+    echo "       $PTT_SCRIPT"
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# Handy
+# ------------------------------------------------------------
+
+if [[ -x /usr/bin/handy ]]; then
+    echo "[ OK ] Handy is installed."
+else
+    echo "[FAIL] Handy was not found at /usr/bin/handy."
+fi
+
+if pgrep -x handy >/dev/null 2>&1; then
+    echo "[ OK ] Handy is currently running."
+else
+    echo "[WARN] Handy is installed but does not appear to be running."
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# Push-to-Talk service
+# ------------------------------------------------------------
+
+if systemctl --user is-active --quiet "$PTT_SERVICE"; then
+    echo "[ OK ] handy-ptt service is running."
+else
+    echo "[FAIL] handy-ptt service is not running."
+    echo
+    systemctl --user status "$PTT_SERVICE" --no-pager 2>/dev/null || true
+fi
+
+echo
+
+
+# ------------------------------------------------------------
+# Handy configuration reminder
+# ------------------------------------------------------------
+
+echo "------------------------------------------------------------"
+echo "Handy settings should be:"
+echo
+echo "  Paste Method:"
+echo "      External Script"
+echo
+echo "  External Script Path:"
+echo "      $PASTE_SCRIPT"
+echo
+echo "  Clipboard Handling:"
+echo "      Don't Modify"
+echo
+echo "  Recording/Transcription Overlay:"
+echo "      Disabled"
+echo
+
+
+# ------------------------------------------------------------
+# End-to-end test
+# ------------------------------------------------------------
+
+echo "------------------------------------------------------------"
+echo "END-TO-END TEST"
+echo
+echo "Configured Push-to-Talk shortcut:"
+echo
+echo "  $KEYBIND"
+echo
+echo "To test:"
+echo
+echo "  1. Click into a text field in another application."
+echo "  2. Hold the shortcut shown above."
+echo '  3. Say: "Testing one two three."'
+echo "  4. Release the shortcut."
+echo "  5. Confirm that the transcription appears."
+echo
+echo "If it works, setup is complete."
+echo
+echo "If it does not work, useful diagnostics are:"
+echo
+echo "  systemctl --user status handy-ptt"
+echo "  journalctl --user -u handy-ptt -b --no-pager"
+echo "  tail -f ~/.local/share/com.pais.handy/logs/handy.log"
+echo
+
+read -rp "Press Enter to close this window..."
+
+
+# ------------------------------------------------------------
+# Remove one-shot post-install service
+# ------------------------------------------------------------
+
+systemctl --user disable handy-postinstall.service >/dev/null 2>&1 || true
+
+rm -f "$HOME/.config/systemd/user/handy-postinstall.service"
+
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+
+rm -f "$HOME/.local/bin/handy-postinstall-check"
+
