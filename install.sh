@@ -214,7 +214,23 @@ trap restore_tty EXIT
 
 while true; do
     [[ -n "$OLD_STTY" ]] && stty -echo -echoctl 2>/dev/null || true
+
     CAPTURE_JSON="$(capture_keybind)"
+
+    # Flush any characters/escape sequences the captured shortcut
+    # also sent to the terminal, such as F-keys or Ctrl combinations.
+    python3 - <<'PY'
+import os
+import termios
+
+try:
+    fd = os.open("/dev/tty", os.O_RDONLY | os.O_NONBLOCK)
+    termios.tcflush(fd, termios.TCIFLUSH)
+    os.close(fd)
+except Exception:
+    pass
+PY
+
     restore_tty
 
     [[ "$CAPTURE_JSON" != ERROR:* ]] || fail "Could not detect keyboard input devices."
