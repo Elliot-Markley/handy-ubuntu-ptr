@@ -236,14 +236,10 @@ read -rp "Press Enter to close this window..."
 
 
 # ------------------------------------------------------------
-# Remove one-shot post-install service
+# Remove one-shot post-install autostart
 # ------------------------------------------------------------
 
-systemctl --user disable handy-postinstall.service >/dev/null 2>&1 || true
-
-rm -f "$HOME/.config/systemd/user/handy-postinstall.service"
-
-systemctl --user daemon-reload >/dev/null 2>&1 || true
+rm -f "$HOME/.config/autostart/handy-postinstall.desktop"
 
 rm -f "$HOME/.local/bin/handy-postinstall-check"
 
