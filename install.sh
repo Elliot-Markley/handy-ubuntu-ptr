@@ -18,6 +18,7 @@ fi
 TARGET_USER="${USER:-$(id -un)}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 PRIMARY_GROUP="$(id -gn "$TARGET_USER")"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 [[ -n "$TARGET_HOME" ]] || fail "Could not determine home directory for $TARGET_USER."
 
