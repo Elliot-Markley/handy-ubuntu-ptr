@@ -10,8 +10,6 @@ PASTE_SCRIPT="$HOME/.local/bin/handy-paste-wl-copy"
 PTT_SCRIPT="$HOME/.local/bin/handy-ptt"
 PTT_SERVICE="handy-ptt.service"
 
-clear
-
 echo "============================================================"
 echo "            Handy Post-Reboot Verification"
 echo "============================================================"
