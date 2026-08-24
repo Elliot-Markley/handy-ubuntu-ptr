@@ -250,9 +250,39 @@ PY
     echo "  $DEVICE_PATH"
     echo
 
-    read -rp "Use this configuration? [Y/n]: " CONFIRM
-    CONFIRM="${CONFIRM:-Y}"
-    [[ "$CONFIRM" =~ ^[Yy]$ ]] && break
+    # Give any terminal escape sequence from the captured shortcut time to arrive.
+sleep 0.1
+
+# Flush anything the shortcut left in the terminal input buffer.
+python3 - <<'PY'
+import os
+import termios
+
+try:
+    fd = os.open("/dev/tty", os.O_RDONLY | os.O_NONBLOCK)
+    termios.tcflush(fd, termios.TCIFLUSH)
+    os.close(fd)
+except Exception:
+    pass
+PY
+
+read -rp "Use this configuration? [Y/n]: " CONFIRM
+
+# Strip control characters / escape-sequence debris.
+CONFIRM="$(printf '%s' "$CONFIRM" | tr -cd '[:alpha:]')"
+CONFIRM="${CONFIRM:-Y}"
+
+case "${CONFIRM,,}" in
+    y|yes)
+        break
+        ;;
+    n|no)
+        ;;
+    *)
+        echo "Please enter Y or N."
+        continue
+        ;;
+esac
 
     echo
     read -rp "Press Enter to capture another shortcut..."
