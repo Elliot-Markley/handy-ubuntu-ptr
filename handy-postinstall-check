@@ -46,7 +46,7 @@ print(config.get("device", ""))
 ' "$CONFIG" 2>/dev/null
     )"
 
-    echo -e "[ \033[32mOK\033[0m ] Push-to-Talk configuration found."
+    echo "{success} Push-to-Talk configuration found."
     echo
     echo "Configured shortcut:"
     echo "  ${KEYBIND:-Unknown}"
