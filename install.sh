@@ -409,11 +409,15 @@ info "Installing post-reboot verification..."
 
 POSTINSTALL_SOURCE="$SCRIPT_DIR/handy-postinstall-check"
 POSTINSTALL_DEST="$TARGET_HOME/.local/bin/handy-postinstall-check"
-POSTINSTALL_SERVICE="$TARGET_HOME/.config/systemd/user/handy-postinstall.service"
+
+AUTOSTART_DIR="$TARGET_HOME/.config/autostart"
+AUTOSTART_FILE="$AUTOSTART_DIR/handy-postinstall.desktop"
 
 if [[ ! -f "$POSTINSTALL_SOURCE" ]]; then
     fail "Could not find handy-postinstall-check next to install.sh."
 fi
+
+mkdir -p "$AUTOSTART_DIR"
 
 rm -f "$POSTINSTALL_DEST" 2>/dev/null || sudo rm -f "$POSTINSTALL_DEST"
 
@@ -421,21 +425,16 @@ install -m 0755 \
     "$POSTINSTALL_SOURCE" \
     "$POSTINSTALL_DEST"
 
-cat > "$POSTINSTALL_SERVICE" <<EOF
-[Unit]
-Description=Handy Post-Reboot Verification
-After=graphical-session.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/gnome-terminal -- $POSTINSTALL_DEST
-
-[Install]
-WantedBy=default.target
+cat > "$AUTOSTART_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Handy Post-Install Check
+Comment=Verify Handy Push-to-Talk setup
+Exec=/usr/bin/gnome-terminal -- $POSTINSTALL_DEST
+Terminal=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
 EOF
-
-systemctl --user daemon-reload
-systemctl --user enable handy-postinstall.service
 
 success "Post-reboot verification installed."
 
