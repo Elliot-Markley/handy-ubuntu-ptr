@@ -400,6 +400,44 @@ else
     warn "Handy was not found at $HANDY_BIN."
 fi
 
+# ------------------------------------------------------------
+# Install post-reboot verification
+# ------------------------------------------------------------
+
+info "Installing post-reboot verification..."
+
+POSTINSTALL_SOURCE="$SCRIPT_DIR/handy-postinstall-check"
+POSTINSTALL_DEST="$TARGET_HOME/.local/bin/handy-postinstall-check"
+POSTINSTALL_SERVICE="$TARGET_HOME/.config/systemd/user/handy-postinstall.service"
+
+if [[ ! -f "$POSTINSTALL_SOURCE" ]]; then
+    fail "Could not find handy-postinstall-check next to install.sh."
+fi
+
+rm -f "$POSTINSTALL_DEST" 2>/dev/null || sudo rm -f "$POSTINSTALL_DEST"
+
+install -m 0755 \
+    "$POSTINSTALL_SOURCE" \
+    "$POSTINSTALL_DEST"
+
+cat > "$POSTINSTALL_SERVICE" <<EOF
+[Unit]
+Description=Handy Post-Reboot Verification
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/gnome-terminal -- $POSTINSTALL_DEST
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable handy-postinstall.service
+
+success "Post-reboot verification installed."
+
 echo
 echo "============================================================"
 echo "                  Installation complete"
